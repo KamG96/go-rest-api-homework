@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -49,7 +50,10 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, err = w.Write(resp)
+	if err != nil {
+		log.Printf("%s", err.Error())
+	}
 }
 
 func postTasks(w http.ResponseWriter, r *http.Request) {
@@ -67,11 +71,15 @@ func postTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, ok := tasks[task.ID]
+	if ok {
+		http.Error(w, "Task  is already exist", http.StatusBadRequest)
+		return
+	}
 	tasks[task.ID] = task
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Задача добавлена"))
 }
 
 func getId(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +87,7 @@ func getId(w http.ResponseWriter, r *http.Request) {
 
 	task, ok := tasks[id]
 	if !ok {
-		http.Error(w, "Задача не найдена", http.StatusBadRequest)
+		http.Error(w, "Task not found", http.StatusBadRequest)
 		return
 	}
 
@@ -91,21 +99,22 @@ func getId(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, err = w.Write(resp)
+	if err != nil {
+		log.Printf("%s", err.Error())
+	}
 }
 
 func deleteId(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	_, ok := tasks[id]
 	if !ok {
-		http.Error(w, "Задача не найдена", http.StatusBadRequest)
+		http.Error(w, "Task not found", http.StatusBadRequest)
 		return
 	}
 	delete(tasks, id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Задача успешно удалена"))
-
 }
 
 func main() {
